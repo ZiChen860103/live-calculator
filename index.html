@@ -35,7 +35,7 @@
   <h1>直播計算器</h1>
 
   <label>成本（台幣）</label>
-  <input id="costTWD" type="number" />
+  <input id="costTWD" type="text" />
 
   <label>毛利率（%）</label>
   <input id="marginRate" type="number" />
@@ -71,8 +71,16 @@
     const rateMYRInput = document.getElementById("rateMYR");
     const records = document.getElementById("records");
 
+    function safeEval(expr) {
+      try {
+        return Function('"use strict";return (' + expr + ')')();
+      } catch (e) {
+        return NaN;
+      }
+    }
+
     function calculate() {
-      const cost = parseFloat(costInput.value);
+      const cost = safeEval(costInput.value);
       const margin = parseFloat(marginInput.value);
       const priceTWD = parseFloat(priceTWDInput.value);
       const priceSGD = parseFloat(priceSGDInput.value);
@@ -100,13 +108,13 @@
       }
 
       // 若有成本與售價台幣可計算毛利率
-      if (cost && calculatedTWD) {
+      if (!isNaN(cost) && calculatedTWD) {
         const calculatedMargin = ((calculatedTWD - cost) / calculatedTWD) * 100;
         marginInput.value = calculatedMargin.toFixed(2);
       }
 
       // 若有成本與毛利率可計算售價
-      if (cost && margin && !priceTWD) {
+      if (!isNaN(cost) && margin && !priceTWD) {
         const calculatedPrice = cost / (1 - margin / 100);
         priceTWDInput.value = calculatedPrice.toFixed(2);
         priceSGDInput.value = (calculatedPrice / rateSGD).toFixed(2);
