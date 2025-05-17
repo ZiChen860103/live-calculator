@@ -1,124 +1,139 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>直播計算器</title>
   <style>
     body {
-      font-family: sans-serif;
-      margin: 2rem;
-      background-color: #222;
-      color: #eee;
+      background-color: #121212;
+      color: #ffffff;
+      font-family: Arial, sans-serif;
+      padding: 20px;
     }
-    input {
+    input, button, select {
+      padding: 10px;
+      margin: 10px 0;
       width: 100%;
-      padding: 8px;
-      margin: 5px 0;
+      border-radius: 5px;
+      border: none;
+      font-size: 16px;
     }
     button {
-      padding: 10px 20px;
-      margin-top: 10px;
+      background-color: #2196F3;
+      color: white;
+      cursor: pointer;
     }
     .record {
-      font-size: 0.9em;
-      margin: 2px 0;
+      border-top: 1px solid #444;
+      margin-top: 20px;
+      padding-top: 10px;
     }
   </style>
 </head>
 <body>
   <h1>直播計算器</h1>
-  <label>成本 (TWD): <input id="cost" type="number"></label><br>
-  <label>毛利率 (%): <input id="margin" type="number"></label><br>
-  <label>售價 TWD: <input id="priceTWD" type="number"></label>
-  <label>售價 SGD: <input id="priceSGD" type="number"></label>
-  <label>售價 MYR: <input id="priceMYR" type="number"></label><br>
 
-  <label>匯率 MYR ➜ TWD: <input id="rateMYR" type="number" value="6.5"></label>
-  <label>匯率 SGD ➜ TWD: <input id="rateSGD" type="number" value="24"></label>
-  <p>SGD ➜ MYR 匯率: <span id="rateSGDToMYR">--</span></p>
+  <label>成本（台幣）</label>
+  <input id="costTWD" type="number" />
+
+  <label>毛利率（%）</label>
+  <input id="marginRate" type="number" />
+
+  <label>售價（台幣）</label>
+  <input id="priceTWD" type="number" />
+
+  <label>售價（新幣）</label>
+  <input id="priceSGD" type="number" />
+
+  <label>售價（馬幣）</label>
+  <input id="priceMYR" type="number" />
+
+  <label>新幣換台幣匯率</label>
+  <input id="rateSGD" type="number" value="23" />
+
+  <label>馬幣換台幣匯率</label>
+  <input id="rateMYR" type="number" value="7" />
 
   <button onclick="calculate()">計算</button>
-  <button onclick="clearFields()">清空</button>
-  <button onclick="clearHistory()">清除記錄</button>
+  <button onclick="clearInputs()">清空</button>
+  <button onclick="clearRecords()">清除計算記錄</button>
 
-  <h2>計算記錄</h2>
-  <div id="history"></div>
+  <div class="record" id="records"></div>
 
   <script>
-    const costInput = document.getElementById('cost');
-    const marginInput = document.getElementById('margin');
-    const priceTWD = document.getElementById('priceTWD');
-    const priceSGD = document.getElementById('priceSGD');
-    const priceMYR = document.getElementById('priceMYR');
-    const rateSGD = document.getElementById('rateSGD');
-    const rateMYR = document.getElementById('rateMYR');
-    const rateSGDToMYR = document.getElementById('rateSGDToMYR');
-    const historyDiv = document.getElementById('history');
-
-    function updateDerivedRate() {
-      const sgdToTwd = parseFloat(rateSGD.value) || 1;
-      const myrToTwd = parseFloat(rateMYR.value) || 1;
-      rateSGDToMYR.innerText = (sgdToTwd / myrToTwd).toFixed(4);
-    }
+    const costInput = document.getElementById("costTWD");
+    const marginInput = document.getElementById("marginRate");
+    const priceTWDInput = document.getElementById("priceTWD");
+    const priceSGDInput = document.getElementById("priceSGD");
+    const priceMYRInput = document.getElementById("priceMYR");
+    const rateSGDInput = document.getElementById("rateSGD");
+    const rateMYRInput = document.getElementById("rateMYR");
+    const records = document.getElementById("records");
 
     function calculate() {
-      updateDerivedRate();
-
       const cost = parseFloat(costInput.value);
       const margin = parseFloat(marginInput.value);
-      const twd = parseFloat(priceTWD.value);
-      const sgdRate = parseFloat(rateSGD.value);
-      const myrRate = parseFloat(rateMYR.value);
-      const sgd = parseFloat(priceSGD.value);
-      const myr = parseFloat(priceMYR.value);
+      const priceTWD = parseFloat(priceTWDInput.value);
+      const priceSGD = parseFloat(priceSGDInput.value);
+      const priceMYR = parseFloat(priceMYRInput.value);
+      const rateSGD = parseFloat(rateSGDInput.value);
+      const rateMYR = parseFloat(rateMYRInput.value);
 
-      let calcPrice, calcCost, calcMargin;
+      let calculatedTWD = priceTWD;
 
-      if (!isNaN(cost) && !isNaN(margin)) {
-        calcPrice = cost / (1 - margin / 100);
-      } else if (!isNaN(cost) && !isNaN(twd)) {
-        calcMargin = ((twd - cost) / twd) * 100;
-      } else if (!isNaN(margin) && !isNaN(twd)) {
-        calcCost = twd * (1 - margin / 100);
-      } else if (!isNaN(sgd)) {
-        calcPrice = sgd * sgdRate;
-      } else if (!isNaN(myr)) {
-        calcPrice = myr * myrRate;
+      if (!priceTWD && priceSGD && rateSGD) {
+        calculatedTWD = priceSGD * rateSGD;
+        priceTWDInput.value = calculatedTWD.toFixed(2);
       }
 
-      if (calcPrice) {
-        priceTWD.value = calcPrice.toFixed(2);
-        priceSGD.value = (calcPrice / sgdRate).toFixed(2);
-        priceMYR.value = (calcPrice / myrRate).toFixed(2);
-      }
-      if (calcMargin) {
-        marginInput.value = calcMargin.toFixed(2);
-      }
-      if (calcCost) {
-        costInput.value = calcCost.toFixed(2);
+      if (!priceTWD && priceMYR && rateMYR) {
+        calculatedTWD = priceMYR * rateMYR;
+        priceTWDInput.value = calculatedTWD.toFixed(2);
       }
 
-      const record = `成本: ${costInput.value} / 毛利率: ${marginInput.value}% / 售價: TWD ${priceTWD.value}, SGD ${priceSGD.value}, MYR ${priceMYR.value}`;
-      const p = document.createElement('div');
-      p.className = 'record';
-      p.innerText = record;
-      historyDiv.prepend(p);
+      if (!priceSGD && calculatedTWD && rateSGD) {
+        priceSGDInput.value = (calculatedTWD / rateSGD).toFixed(2);
+      }
+      if (!priceMYR && calculatedTWD && rateMYR) {
+        priceMYRInput.value = (calculatedTWD / rateMYR).toFixed(2);
+      }
+
+      // 若有成本與售價台幣可計算毛利率
+      if (cost && calculatedTWD) {
+        const calculatedMargin = ((calculatedTWD - cost) / calculatedTWD) * 100;
+        marginInput.value = calculatedMargin.toFixed(2);
+      }
+
+      // 若有成本與毛利率可計算售價
+      if (cost && margin && !priceTWD) {
+        const calculatedPrice = cost / (1 - margin / 100);
+        priceTWDInput.value = calculatedPrice.toFixed(2);
+        priceSGDInput.value = (calculatedPrice / rateSGD).toFixed(2);
+        priceMYRInput.value = (calculatedPrice / rateMYR).toFixed(2);
+      }
+
+      addRecord();
     }
 
-    function clearFields() {
-      costInput.value = '';
-      marginInput.value = '';
-      priceTWD.value = '';
-      priceSGD.value = '';
-      priceMYR.value = '';
+    function clearInputs() {
+      costInput.value = "";
+      marginInput.value = "";
+      priceTWDInput.value = "";
+      priceSGDInput.value = "";
+      priceMYRInput.value = "";
     }
 
-    function clearHistory() {
-      historyDiv.innerHTML = '';
+    function clearRecords() {
+      records.innerHTML = "";
     }
 
-    updateDerivedRate();
+    function addRecord() {
+      const item = document.createElement("div");
+      item.innerText = `成本: TWD ${costInput.value}, 毛利率: ${marginInput.value}%, 
+      售價: TWD ${priceTWDInput.value}, SGD ${priceSGDInput.value}, MYR ${priceMYRInput.value}`;
+      records.prepend(item);
+    }
   </script>
 </body>
 </html>
