@@ -206,11 +206,13 @@
         priceSGDInput.value = (calculatedPrice / rateSGD).toFixed(2);
         priceMYRInput.value = (calculatedPrice / rateMYR).toFixed(2);
       }
+		
+		// 若有售價與毛利率可反推成本
+	if ((isNaN(cost) || cost === 0) && calculatedTWD && !isNaN(margin)) {
+		const calculatedCost = calculatedTWD * (1 - margin / 100);
+		costInput.value = calculatedCost.toFixed(2);
+	}
 
-      // 若有售價與毛利率可反推成本
-      if ((isNaN(cost) || cost === 0) && calculatedTWD && !isNaN(margin)) {
-        const calculatedCost = calculatedTWD * (1 - margin / 100);
-        costInput.value = calculatedCost.toFixed(2);
 
       addRecord();
     }
