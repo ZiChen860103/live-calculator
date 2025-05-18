@@ -115,7 +115,7 @@
     <h1>直播計算器</h1>
     <div class="card">
       <label>成本（台幣）</label>
-      <input id="costTWD" type="text" />
+      <input id="costTWD" type="text"/>
 
       <label>毛利率（%）</label>
       <input id="marginRate" type="number" />
@@ -185,13 +185,20 @@
         priceTWDInput.value = calculatedTWD.toFixed(2);
       }
 
-      if (!priceSGD && calculatedTWD && rateSGD) {
-        priceSGDInput.value = (calculatedTWD / rateSGD).toFixed(2);
-      }
-
-      if (!priceMYR && calculatedTWD && rateMYR) {
-        priceMYRInput.value = (calculatedTWD / rateMYR).toFixed(2);
-      }
+	// 優先從 成本 + 毛利率 推算售價台幣
+	if (!priceTWD && !isNaN(cost) && !isNaN(margin)) {
+		calculatedTWD = cost / (1 - margin / 100);
+		priceTWDInput.value = calculatedTWD.toFixed(2);
+	} 
+	// 否則才從新幣或馬幣換算回來
+	else if (!priceTWD && priceSGD && rateSGD) {
+		calculatedTWD = priceSGD * rateSGD;
+		priceTWDInput.value = calculatedTWD.toFixed(2);
+	} 
+	else if (!priceTWD && priceMYR && rateMYR) {
+		calculatedTWD = priceMYR * rateMYR;
+		priceTWDInput.value = calculatedTWD.toFixed(2);
+	}
 
       // 有成本與售價可計算毛利率
       if (!isNaN(cost) && calculatedTWD) {
@@ -199,18 +206,18 @@
         marginInput.value = calculatedMargin.toFixed(2);
       }
 
+	// 若有售價與毛利率可反推成本
+	if ((isNaN(cost) || cost === 0) && calculatedTWD && !isNaN(margin)) {
+		const calculatedCost = calculatedTWD * (1 - margin / 100);
+		costInput.value = calculatedCost.toFixed(2);
+		}
+
       // 有成本與毛利率可計算售價
       if (!isNaN(cost) && margin && !priceTWD) {
         const calculatedPrice = cost / (1 - margin / 100);
         priceTWDInput.value = calculatedPrice.toFixed(2);
         priceSGDInput.value = (calculatedPrice / rateSGD).toFixed(2);
         priceMYRInput.value = (calculatedPrice / rateMYR).toFixed(2);
-      }
-	    
-      // 若有售價與毛利率可反推成本
-      if ((isNaN(cost) || cost === 0) && calculatedTWD && !isNaN(margin)) {
-        const calculatedCost = calculatedTWD * (1 - margin / 100);
-        costInput.value = calculatedCost.toFixed(2);
       }
 
       addRecord();
