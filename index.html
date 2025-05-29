@@ -164,64 +164,53 @@
       }
     }
 
-    function calculate() {
-      const cost = safeEval(costInput.value);
-      const margin = parseFloat(marginInput.value);
-      const priceTWD = parseFloat(priceTWDInput.value);
-      const priceSGD = parseFloat(priceSGDInput.value);
-      const priceMYR = parseFloat(priceMYRInput.value);
-      const rateSGD = parseFloat(rateSGDInput.value);
-      const rateMYR = parseFloat(rateMYRInput.value);
+function calculate() {
+  const cost = safeEval(costInput.value);
+  const margin = parseFloat(marginInput.value);
+  let priceTWD = parseFloat(priceTWDInput.value);
+  const priceSGD = parseFloat(priceSGDInput.value);
+  const priceMYR = parseFloat(priceMYRInput.value);
+  const rateSGD = parseFloat(rateSGDInput.value);
+  const rateMYR = parseFloat(rateMYRInput.value);
 
-      let calculatedTWD = priceTWD;
+  // 1. 若無台幣售價，優先用 成本 + 毛利率 推算
+  if (!priceTWD && !isNaN(cost) && !isNaN(margin)) {
+    priceTWD = cost / (1 - margin / 100);
+    priceTWDInput.value = priceTWD.toFixed(2);
+  }
 
-      if (!priceTWD && priceSGD && rateSGD) {
-        calculatedTWD = priceSGD * rateSGD;
-        priceTWDInput.value = calculatedTWD.toFixed(2);
-      }
+  // 2. 若還沒有台幣售價，嘗試從新幣或馬幣推算
+  if (!priceTWD && !isNaN(priceSGD) && !isNaN(rateSGD)) {
+    priceTWD = priceSGD * rateSGD;
+    priceTWDInput.value = priceTWD.toFixed(2);
+  } else if (!priceTWD && !isNaN(priceMYR) && !isNaN(rateMYR)) {
+    priceTWD = priceMYR * rateMYR;
+    priceTWDInput.value = priceTWD.toFixed(2);
+  }
 
-      if (!priceTWD && priceMYR && rateMYR) {
-        calculatedTWD = priceMYR * rateMYR;
-        priceTWDInput.value = calculatedTWD.toFixed(2);
-      }
+  // 3. 有台幣售價後，再推算新幣與馬幣
+  if (priceTWD && !priceSGD && rateSGD) {
+    priceSGDInput.value = (priceTWD / rateSGD).toFixed(2);
+  }
 
-	// 優先從 成本 + 毛利率 推算售價台幣
-	if (!priceTWD && !isNaN(cost) && !isNaN(margin)) {
-		calculatedTWD = cost / (1 - margin / 100);
-		priceTWDInput.value = calculatedTWD.toFixed(2);
-	} 
-	// 否則才從新幣或馬幣換算回來
-	else if (!priceTWD && priceSGD && rateSGD) {
-		calculatedTWD = priceSGD * rateSGD;
-		priceTWDInput.value = calculatedTWD.toFixed(2);
-	} 
-	else if (!priceTWD && priceMYR && rateMYR) {
-		calculatedTWD = priceMYR * rateMYR;
-		priceTWDInput.value = calculatedTWD.toFixed(2);
-	}
+  if (priceTWD && !priceMYR && rateMYR) {
+    priceMYRInput.value = (priceTWD / rateMYR).toFixed(2);
+  }
 
-      // 有成本與售價可計算毛利率
-      if (!isNaN(cost) && calculatedTWD) {
-        const calculatedMargin = ((calculatedTWD - cost) / calculatedTWD) * 100;
-        marginInput.value = calculatedMargin.toFixed(2);
-      }
+  // 4. 推算毛利率
+  if (!isNaN(cost) && priceTWD) {
+    const calculatedMargin = ((priceTWD - cost) / priceTWD) * 100;
+    marginInput.value = calculatedMargin.toFixed(2);
+  }
 
-	// 若有售價與毛利率可反推成本
-	if ((isNaN(cost) || cost === 0) && calculatedTWD && !isNaN(margin)) {
-		const calculatedCost = calculatedTWD * (1 - margin / 100);
-		costInput.value = calculatedCost.toFixed(2);
-		}
+  // 5. 若只有毛利率與售價，可反推成本
+  if ((isNaN(cost) || cost === 0) && priceTWD && !isNaN(margin)) {
+    const calculatedCost = priceTWD * (1 - margin / 100);
+    costInput.value = calculatedCost.toFixed(2);
+  }
 
-      // 有成本與毛利率可計算售價
-      if (!isNaN(cost) && margin && !priceTWD) {
-        const calculatedPrice = cost / (1 - margin / 100);
-        priceTWDInput.value = calculatedPrice.toFixed(2);
-        priceSGDInput.value = (calculatedPrice / rateSGD).toFixed(2);
-        priceMYRInput.value = (calculatedPrice / rateMYR).toFixed(2);
-      }
-
-      addRecord();
-    }
+  addRecord();
+}
 
     function clearInputs() {
       costInput.value = "";
